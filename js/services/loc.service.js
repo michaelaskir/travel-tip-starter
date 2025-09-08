@@ -30,7 +30,7 @@ export const locService = {
     save,
     setFilterBy,
     setSortBy,
-    getLocCountByRateMap
+    getLocCountByRateMap,
 }
 
 function query() {
@@ -87,6 +87,7 @@ function setFilterBy(filterBy = {}) {
     if (filterBy.minRate !== undefined && !isNaN(filterBy.minRate)) gFilterBy.minRate = filterBy.minRate
     return gFilterBy
 }
+
 
 function getLocCountByRateMap() {
     return storageService.query(DB_KEY)

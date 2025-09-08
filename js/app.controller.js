@@ -18,6 +18,8 @@ window.app = {
     onSetFilterBy,
 }
 
+var gUserPos
+
 function onInit() {
     getFilterByFromQueryParams()
     loadAndRenderLocs()
@@ -35,12 +37,17 @@ function onInit() {
 function renderLocs(locs) {
     const selectedLocId = getLocIdFromQueryParams()
 
+    console.log('locs:', locs)
     var strHTML = locs.map(loc => {
         const className = (loc.id === selectedLocId) ? 'active' : ''
         return `
         <li class="loc ${className}" data-id="${loc.id}">
             <h4>  
                 <span>${loc.name}</span>
+            <span>${gUserPos
+                ? utilService.getDistance(gUserPos, { lat: loc.geo.lat, lng: loc.geo.lng })+'KM'
+               : ''
+            }</span>
                 <span title="${loc.rate} stars">${'★'.repeat(loc.rate)}</span>
             </h4>
             <p class="muted">
@@ -69,7 +76,7 @@ function renderLocs(locs) {
 }
 
 function onRemoveLoc(locId) {
-    if(!confirm("are you sure you want to delete thhis location?")) return
+    if (!confirm("are you sure you want to delete thhis location?")) return
 
     locService.remove(locId)
         .then(() => {
@@ -81,6 +88,11 @@ function onRemoveLoc(locId) {
             console.error('OOPs:', err)
             flashMsg('Cannot remove location')
         })
+}
+
+function setUserPos(lat, lng) {
+    gUserPos = { lat, lng }
+    console.log('gUserPos:', gUserPos)
 }
 
 function onSearchAddress(ev) {
@@ -133,6 +145,7 @@ function onPanToUserPos() {
             unDisplayLoc()
             loadAndRenderLocs()
             flashMsg(`You are at Latitude: ${latLng.lat} Longitude: ${latLng.lng}`)
+            setUserPos(latLng.lat, latLng.lng)
         })
         .catch(err => {
             console.error('OOPs:', err)
@@ -225,7 +238,7 @@ function getFilterByFromQueryParams() {
     const queryParams = new URLSearchParams(window.location.search)
     const txt = queryParams.get('txt') || ''
     const minRate = queryParams.get('minRate') || 0
-    locService.setFilterBy({txt, minRate})
+    locService.setFilterBy({ txt, minRate })
 
     document.querySelector('input[name="filter-by-txt"]').value = txt
     document.querySelector('input[name="filter-by-rate"]').value = minRate
