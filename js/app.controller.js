@@ -67,6 +67,7 @@ function renderLocs(locs) {
     elLocList.innerHTML = strHTML || 'No locs to show'
 
     renderLocStats()
+    renderLocLastUpdate()
 
     if (selectedLocId) {
         const selectedLoc = locs.find(loc => loc.id === selectedLocId)
@@ -280,12 +281,17 @@ function renderLocStats() {
     })
 }
 
+function renderLocLastUpdate() {
+    locService.getLocCountByLastUpdateMap().then(locs => {
+        handleStats(locs, 'loc-stats-last-update')
+    })
+}
+
 function handleStats(stats, selector) {
     // stats = { low: 37, medium: 11, high: 100, total: 148 }
     // stats = { low: 5, medium: 5, high: 5, baba: 55, mama: 30, total: 100 }
     const labels = cleanStats(stats)
     const colors = utilService.getColors()
-
     var sumPercent = 0
     var colorsStr = `${colors[0]} ${0}%, `
     labels.forEach((label, idx) => {
