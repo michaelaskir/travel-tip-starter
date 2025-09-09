@@ -18,6 +18,7 @@ window.app = {
     onSetFilterBy,
     onUpdateLocModal,
     onCloseModal,
+    onColorThemeChange,
 }
 
 var gUserPos
@@ -77,6 +78,11 @@ function renderLocs(locs) {
         displayLoc(selectedLoc)
     }
     document.querySelector('.debug').innerText = JSON.stringify(locs, null, 2)
+}
+
+function onColorThemeChange(){
+    const elHtml = document.querySelector('html')
+    elHtml.classList.toggle('clr-theme-2')
 }
 
 function onRemoveLoc(locId) {
