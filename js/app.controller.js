@@ -8,7 +8,7 @@ window.onload = onInit
 // functions that are called from DOM are defined on a global app object
 window.app = {
     onRemoveLoc,
-    onUpdateLoc,
+    onEditLoc,
     onSelectLoc,
     onPanToUserPos,
     onSearchAddress,
@@ -16,9 +16,12 @@ window.app = {
     onShareLoc,
     onSetSortBy,
     onSetFilterBy,
+    onUpdateLocModal,
+    onCloseModal,
 }
 
 var gUserPos
+var gNewLoc
 
 function onInit() {
     getFilterByFromQueryParams()
@@ -32,7 +35,7 @@ function onInit() {
             console.error('OOPs:', err)
             flashMsg('Cannot init map')
         })
-}
+} 
 
 function renderLocs(locs) {
     const selectedLocId = getLocIdFromQueryParams()
@@ -58,7 +61,7 @@ function renderLocs(locs) {
             </p>
             <div class="loc-btns">     
                <button title="Delete" onclick="app.onRemoveLoc('${loc.id}')">🗑️</button>
-               <button title="Edit" onclick="app.onUpdateLoc('${loc.id}')">✏️</button>
+               <button title="Edit" onclick="app.onEditLoc('${loc.id}')">✏️</button>
                <button title="Select" onclick="app.onSelectLoc('${loc.id}')">🗺️</button>
             </div>     
         </li>`}).join('')
@@ -77,7 +80,7 @@ function renderLocs(locs) {
 }
 
 function onRemoveLoc(locId) {
-    if (!confirm("are you sure you want to delete thhis location?")) return
+    if (!confirm("Are you sure you want to delete this location?")) return
 
     locService.remove(locId)
         .then(() => {
@@ -110,25 +113,40 @@ function onSearchAddress(ev) {
 }
 
 function onAddLoc(geo) {
-    const locName = prompt('Loc name', geo.address || 'Just a place')
-    if (!locName) return
+    console.log('geo',geo)
 
-    const loc = {
-        name: locName,
-        rate: +prompt(`Rate (1-5)`, '3'),
-        geo
-    }
-    locService.save(loc)
-        .then((savedLoc) => {
+    const elUpdateModal = document.querySelector('.update-locs')
+    let elLocName = elUpdateModal.querySelector('.loc-name')
+    const elLocRate = elUpdateModal.querySelector('.loc-rate')
+
+    console.log(elLocName.value)
+    console.log(geo.address)
+    elLocName.value = geo.address || 'Just a place'
+    elLocRate.value = ''
+    
+    onUpdateLocModal(true)
+        .then(locData => {
+            console.log(locData.name)
+
+            const loc = {
+                name: locData.name,
+                rate: locData.rate || 3,
+                geo
+            }
+
+            return locService.save(loc)
+        })
+        .then(savedLoc => {
             flashMsg(`Added Location (id: ${savedLoc.id})`)
             utilService.updateQueryParams({ locId: savedLoc.id })
             loadAndRenderLocs()
         })
         .catch(err => {
-            console.error('OOPs:', err)
+            console.error('Oops:', err)
             flashMsg('Cannot add location')
         })
 }
+
 
 function loadAndRenderLocs() {
     locService.query()
@@ -154,23 +172,60 @@ function onPanToUserPos() {
         })
 }
 
-function onUpdateLoc(locId) {
+function onUpdateLocModal(isModalShown){
+    const elUpdateModal = document.querySelector('.update-locs')
+    const elLocName = elUpdateModal.querySelector('.loc-name')
+    const elLocRate = elUpdateModal.querySelector('.loc-rate')
+    
+    if (isModalShown) {
+        elUpdateModal.show()
+
+        return new Promise((resolve) => {
+            gNewLoc = resolve
+        })
+
+    } else {
+        // elUpdateModal.close()
+        onCloseModal()
+        if (gNewLoc) {
+            gNewLoc({
+                name: elLocName.value,
+                rate: elLocRate.value
+            })
+            gNewLoc = null
+        }
+    }
+}
+
+function onCloseModal(){
+    const elUpdateModal = document.querySelector('.update-locs')
+    elUpdateModal.close()
+}
+
+function onEditLoc(locId) {
+    const elUpdateModal = document.querySelector('.update-locs')
+    const elLocName = elUpdateModal.querySelector('.loc-name')
+    const elLocRate = elUpdateModal.querySelector('.loc-rate')
+
     locService.getById(locId)
         .then(loc => {
-            const rate = prompt('New rate?', loc.rate)
-            if (rate && rate !== loc.rate) {
-                loc.rate = rate
-                locService.save(loc)
-                    .then(savedLoc => {
-                        flashMsg(`Rate was set to: ${savedLoc.rate}`)
-                        loadAndRenderLocs()
-                    })
-                    .catch(err => {
-                        console.error('OOPs:', err)
-                        flashMsg('Cannot update location')
-                    })
-
-            }
+            elLocName.value = loc.name
+            elLocRate.value = loc.rate
+            return onUpdateLocModal(true)
+            .then(locData => {
+                loc.name = locData.name
+                loc.rate = locData.rate || 3
+                return locService.save(loc)
+            })
+        })
+        .then(savedLoc => {
+            flashMsg(`Location Updated (id: ${savedLoc.id})`)
+            utilService.updateQueryParams({ locId: savedLoc.id })
+            loadAndRenderLocs()
+        })
+        .catch(err => {
+            console.error('Oops:', err)
+            flashMsg('Cannot update location')
         })
 }
 

@@ -1,0 +1,28 @@
+.update-locs{
+    position: absolute;      
+    top: 50%;             
+    left: 50%;           
+    transform: translate(-50%, -50%); 
+    padding: 2em;
+    border: none;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.update-locs input{
+    min-width: 9em;
+    margin: 1em;
+}
+
+.update-locs .close {
+    position: absolute;        
+    top: 0.5rem;             
+    right: 1rem; 
+}
+
+.update-locs .save {
+    position: absolute;        
+    bottom: -5%;
+    left: 50%;             
+    transform: translate(-50%, -50%); 
+}
