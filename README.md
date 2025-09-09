@@ -82,6 +82,7 @@ window.app = {
     onSetFilterBy,
     onUpdateLocModal,
     onCloseModal,
+    onColorThemeChange,
 }
 ```
 
