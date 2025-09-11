@@ -16,13 +16,11 @@ window.app = {
     onShareLoc,
     onSetSortBy,
     onSetFilterBy,
-    onUpdateLocModal,
-    onCloseModal,
+    onSaveLoc,
     onColorThemeChange,
 }
 
 var gUserPos
-var gNewLoc
 
 function onInit() {
     getFilterByFromQueryParams()
@@ -118,40 +116,7 @@ function onSearchAddress(ev) {
         })
 }
 
-function onAddLoc(geo) {
-    console.log('geo',geo)
 
-    const elUpdateModal = document.querySelector('.update-locs')
-    let elLocName = elUpdateModal.querySelector('.loc-name')
-    const elLocRate = elUpdateModal.querySelector('.loc-rate')
-
-    console.log(elLocName.value)
-    console.log(geo.address)
-    elLocName.value = geo.address || 'Just a place'
-    elLocRate.value = ''
-    
-    onUpdateLocModal(true)
-        .then(locData => {
-            console.log(locData.name)
-
-            const loc = {
-                name: locData.name,
-                rate: locData.rate || 3,
-                geo
-            }
-
-            return locService.save(loc)
-        })
-        .then(savedLoc => {
-            flashMsg(`Added Location (id: ${savedLoc.id})`)
-            utilService.updateQueryParams({ locId: savedLoc.id })
-            loadAndRenderLocs()
-        })
-        .catch(err => {
-            console.error('Oops:', err)
-            flashMsg('Cannot add location')
-        })
-}
 
 
 function loadAndRenderLocs() {
@@ -178,55 +143,59 @@ function onPanToUserPos() {
         })
 }
 
-function onUpdateLocModal(isModalShown){
-    const elUpdateModal = document.querySelector('.update-locs')
-    const elLocName = elUpdateModal.querySelector('.loc-name')
-    const elLocRate = elUpdateModal.querySelector('.loc-rate')
-    
-    if (isModalShown) {
-        elUpdateModal.show()
 
-        return new Promise((resolve) => {
-            gNewLoc = resolve
-        })
-
-    } else {
-        // elUpdateModal.close()
-        onCloseModal()
-        if (gNewLoc) {
-            gNewLoc({
-                name: elLocName.value,
-                rate: elLocRate.value
-            })
-            gNewLoc = null
-        }
-    }
-}
-
-function onCloseModal(){
-    const elUpdateModal = document.querySelector('.update-locs')
-    elUpdateModal.close()
-}
 
 function onEditLoc(locId) {
-    const elUpdateModal = document.querySelector('.update-locs')
-    const elLocName = elUpdateModal.querySelector('.loc-name')
-    const elLocRate = elUpdateModal.querySelector('.loc-rate')
+    const elModal = document.querySelector('.update-locs')
+    const elLocName = elModal.querySelector('.loc-name')
+    const elLocRate = elModal.querySelector('.loc-rate')
+    const elLocId = elModal.querySelector('.loc-id')
 
     locService.getById(locId)
         .then(loc => {
             elLocName.value = loc.name
             elLocRate.value = loc.rate
-            return onUpdateLocModal(true)
-            .then(locData => {
-                loc.name = locData.name
-                loc.rate = locData.rate || 3
-                return locService.save(loc)
-            })
+            elLocId.value = locId
+            elModal.show()
         })
-        .then(savedLoc => {
+}
+
+function onAddLoc(geo) {
+    console.log('geo',geo)
+
+    const elModal = document.querySelector('.update-locs')
+    let elLocName = elModal.querySelector('.loc-name')
+    const elLocRate = elModal.querySelector('.loc-rate')
+
+    elLocName.value = geo.address || 'Just a place'
+    elLocRate.value = 3
+    elModal.dataset.geo = JSON.stringify(geo)
+    elModal.show()
+
+}
+
+function onSaveLoc(){
+
+    const elModal = document.querySelector('.update-locs')
+    const elLocName = elModal.querySelector('.loc-name').value
+    const elLocRate = elModal.querySelector('.loc-rate').value
+    let elLocId = elModal.querySelector('.loc-id').value
+
+    const location = {
+        name: elLocName,
+        rate: +elLocRate,
+        id: elLocId,
+    }
+    if(!location.id) {
+        location.geo = JSON.parse(elModal.dataset.geo)
+    }
+
+    locService.save(location)
+        .then((savedLoc) => {
+            elModal.close()
+            elLocId = ''
+            utilService.updateQueryParams({locId: savedLoc.id})
             flashMsg(`Location Updated (id: ${savedLoc.id})`)
-            utilService.updateQueryParams({ locId: savedLoc.id })
             loadAndRenderLocs()
         })
         .catch(err => {
