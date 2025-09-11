@@ -80,8 +80,7 @@ window.app = {
     onShareLoc,
     onSetSortBy,
     onSetFilterBy,
-    onUpdateLocModal,
-    onCloseModal,
+    onSaveLoc,
     onColorThemeChange,
 }
 ```
